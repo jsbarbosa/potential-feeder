@@ -4,16 +4,11 @@
 
 #define START_HOUR 11
 #define START_MINUTE 59
-#define START_SECOND 45
 
 #define SET_HOUR 12
 #define SET_MINUTE 0
-#define SET_SECOND 0
 
-uint8_t
-
-#define HOUR 3600
-#define MINUTE 60
+#define HOUR 60
 
 #define M0 _BV(PB5)
 #define M1 _BV(PB4)
@@ -30,24 +25,17 @@ void initMotor(void)
     PORTB = 0x00; // all low
 }
 
-void timeLeft(uint8_t hours, uint8_t minutes, uint8_t seconds, 
-		uint8_t *hours_left, uint8_t *minutes_left, uint8_t *seconds_left)
+uint16_t globalTime(uint8_t hours, uint8_t minutes)
 {
-	if(SET_SECOND < seconds)
-	{
-		if(minutes_left > 0){minutes_left -= 1;}
-		else{minutes_left += 60; hours_left -= 1;}
-		seconds_left += 60;
-	}
-	seconds_left -= seconds;
-	if(minutes_left < minutes)
-	{
-		minutes_left += 60;
-		hours_left -= 1;
-	}
-	minutes_left -= minutes;
-	hours_left -= hours;
+	return hours*HOUR + minutes;
+}
+
+void hoursMinutes(uint16_t current, uint8_t *hours, uint8_t *minutes)
+{
 	
+	uint16_t hour = HOUR;
+	*hours = current / hour;
+	*minutes = current % hour;
 }
 
 void rotate(uint8_t direction)
@@ -84,27 +72,20 @@ int main(void)
 {	
 	initMotor();
 	
-    uint8_t seconds = 45;
-    uint8_t minutes = 59;
-    uint8_t hours = 11; 
+	uint8_t hours = START_HOUR;
+    uint8_t minutes = START_MINUTE;
+     
+    uint8_t hours_left, minutes_left;
     
-    uint8_t seconds_left = 0;
-    uint8_t minutes_left = 0;
-    uint8_t hours_left = 0; 
+    uint16_t current_time, set_time, left_time;
     
-    uint8_t seconds_set = 0;
-    uint8_t minutes_set = 0;
-    uint8_t hours_set = 12;
- 
+    current_time = globalTime(hours, minutes);
+    set_time = globalTime(SET_HOUR, SET_MINUTE);
+
     LCDSetup(LCD_CURSOR_ULINE);
  
     while(1)
     {
-        if(seconds > 59)
-        {
-            minutes += 1;
-            seconds -= 60;
-        }
         if(minutes > 59)
 		{
 			hours += 1;
@@ -114,6 +95,13 @@ int main(void)
 		{
 			hours -= 24;
 		}
+		
+		current_time = globalTime(hours, minutes);
+		if(set_time >= current_time){left_time = set_time - current_time;}
+		else{left_time = (set_time + 24*HOUR) - current_time ;}
+		
+		hours_left = left_time / HOUR;
+		minutes_left = left_time % HOUR;
 		
         LCDGotoXY(1, 1);
 		LCDWriteString("Current: ");
@@ -129,26 +117,20 @@ int main(void)
 		LCDWriteString(":");
 		LCDWriteInt(minutes_left, 2);
 		
-		if((seconds_set != seconds) | (minutes_set != minutes) | (hours_set != hours))
+		if(left_time != 0)
 		{
-			seconds += 1;
-			_delay_ms(1000);
+			minutes += 1;
+			_delay_ms(60000);
 		}
 		else
-		{
-			seconds_left = 0;
-			minutes_left = 0;
-			hours_left = 24;
-			
+		{			
 			rotate(RIGHT);
-			PORTB = 0x00;
-
-			_delay_ms(1000);
 
 			rotate(LEFT);
 			PORTB = 0x00;
 			
-			seconds += 4;
+			_delay_ms(57000);
+			minutes += 1;
 		}        
     }
 }
