@@ -2,8 +2,8 @@
 #include <util/delay.h>
 #include "OnLCDLib.h"
 
-#define START_HOUR 7 + 12
-#define START_MINUTE 00
+#define START_HOUR 9 + 12
+#define START_MINUTE 35
 
 #define SET_HOUR 12
 #define SET_MINUTE 0
@@ -142,7 +142,8 @@ int main(void)
 			{
 				USED = 0;
 			}
-			_delay_ms(10);
+			_delay_ms(9);
+			_delay_us(878);
 		}
 		
 		if(seconds < 60)
